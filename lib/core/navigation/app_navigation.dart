@@ -21,52 +21,43 @@ class NavigationCallbacks {
 
   NavigationCallbacks({required this.context});
 
-  /// Navigate to Home with HomeBloc
   void toHome() {
     context.go(Routes.home);
   }
 
-  /// Navigate to Login with AuthBloc
   void toLogin() {
     context.go(Routes.login);
   }
 
-  /// Navigate to Profile with ProfileBloc
   void toProfile(String userId) {
     context.go(Routes.profile.replaceFirst(':userId', userId));
   }
 
-  /// Navigate to Search with SearchBloc
   void toSearch() {
     context.goNamed(Routes.searchName);
   }
 
-  /// Navigate to Splash
   void toSplash() {
     context.go(Routes.splash);
   }
 
-  /// Pop current route
   void pop() {
     if (context.canPop()) {
       context.pop();
     }
   }
 
-  /// Pop until specific route
   void popUntil(String routeName) {
     while (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
   }
 
-  /// Replace current route
   void replaceRoute(String routePath) {
     context.go(routePath);
   }
 }
 
-/// Screen widget with BLoC initialization
 class _HomeScreenWithBloc extends StatelessWidget {
   final NavigationCallbacks navigationCallbacks;
 
@@ -74,8 +65,8 @@ class _HomeScreenWithBloc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<HomeBloc>(
-      create: (context) => getIt<HomeBloc>(),
+    return BlocProvider<HomeBloc>.value(
+      value: getIt<HomeBloc>(),
       child: HomeScreen(
         onNavigateToProfile: (userId) => navigationCallbacks.toProfile(userId),
         onNavigateToSearch: () => navigationCallbacks.toSearch(),
@@ -92,10 +83,10 @@ class _LoginScreenWithBloc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthBloc>(
-      create: (context) => getIt<AuthBloc>(),
+    return BlocProvider<AuthBloc>.value(
+      value: getIt<AuthBloc>(),  // ✅ Uses existing singleton
       child: LoginRegisterScreen(
-        onNavigateToHome: () => navigationCallbacks.toHome(),
+        onNavigateToHome: () => navigationCallbacks.toHome()
       ),
     );
   }
@@ -112,8 +103,8 @@ class _ProfileScreenWithBloc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ProfileBloc>(
-      create: (context) => getIt<ProfileBloc>(),
+    return BlocProvider<ProfileBloc>.value(
+      value: getIt<ProfileBloc>(),
       child: ProfileScreen(
         userId: userId,
         onNavigateBack: () => navigationCallbacks.pop(),
@@ -130,8 +121,8 @@ class _SearchScreenWithBloc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<SearchBloc>(
-      create: (context) => getIt<SearchBloc>(),
+    return BlocProvider<SearchBloc>.value(
+      value: getIt<SearchBloc>(),
       child: SearchScreen(
         onNavigateToDetail: (id) => navigationCallbacks.toProfile(id),
         onNavigateBack: () => navigationCallbacks.pop(),
@@ -147,13 +138,20 @@ class _SplashScreenWithBloc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthBloc>(
-      create: (context) => getIt<AuthBloc>(),
-      child: SplashScreen(onNavigateToHome: () {
-        navigationCallbacks.toHome();
-      }, onNavigateToLogin: () {
-        navigationCallbacks.toLogin();
-      },),
+    return BlocProvider<AuthBloc>.value(
+      value: getIt<AuthBloc>(),
+      child: SplashScreen(
+        onNavigateToHome: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigationCallbacks.toHome();
+          });
+        },
+        onNavigateToLogin: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigationCallbacks.toLogin();
+          });
+        },
+      ),
     );
   }
 }
@@ -168,7 +166,6 @@ class AppNavigation {
 
   AppNavigation._internal();
 
-  /// Build the GoRouter with all routes and their BLoCs
   static GoRouter buildRouter() {
     final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -176,7 +173,6 @@ class AppNavigation {
       navigatorKey: rootNavigatorKey,
       initialLocation: Routes.splash,
       redirect: (context, state) {
-        // Auth guard logic can be added here
         return null;
       },
       routes: [

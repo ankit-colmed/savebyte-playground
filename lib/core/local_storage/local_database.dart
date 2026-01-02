@@ -61,7 +61,7 @@ class LocalDatabase {
       CREATE TABLE sync_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         action TEXT,
-        tableNa TEXT,
+        tableName TEXT,
         data TEXT,
         status TEXT,
         createdAt TEXT,

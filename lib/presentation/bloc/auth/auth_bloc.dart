@@ -1,14 +1,31 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../domain/usecases/login_usecase.dart';
+import '../../../domain/usecases/register_usecase.dart';
+import '../../../domain/usecases/logout_usecase.dart';
+import '../../../domain/usecases/get_logged_in_user_usecase.dart';
+import '../../../domain/usecases/is_logged_in_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  // Inject use cases here when implemented
-  // final LoginUseCase loginUseCase;
-  // final RegisterUseCase registerUseCase;
-  // final LogoutUseCase logoutUseCase;
+  final LoginUseCase _loginUseCase;
+  final RegisterUseCase _registerUseCase;
+  final LogoutUseCase _logoutUseCase;
+  final GetLoggedInUserUseCase _getLoggedInUserUseCase;
+  final IsLoggedInUseCase _isLoggedInUseCase;
 
-  AuthBloc() : super(const AuthInitialState()) {
+  AuthBloc({
+    required LoginUseCase loginUseCase,
+    required RegisterUseCase registerUseCase,
+    required LogoutUseCase logoutUseCase,
+    required GetLoggedInUserUseCase getLoggedInUserUseCase,
+    required IsLoggedInUseCase isLoggedInUseCase,
+  })  : _loginUseCase = loginUseCase,
+        _registerUseCase = registerUseCase,
+        _logoutUseCase = logoutUseCase,
+        _getLoggedInUserUseCase = getLoggedInUserUseCase,
+        _isLoggedInUseCase = isLoggedInUseCase,
+        super(const AuthInitialState()) {
     on<AuthLoginEvent>(_onLoginEvent);
     on<AuthRegisterEvent>(_onRegisterEvent);
     on<AuthLogoutEvent>(_onLogoutEvent);
@@ -21,21 +38,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     emit(const AuthLoadingState());
     try {
-      // Call use case
-      // final result = await loginUseCase.call(event.email, event.password);
-      // if (result.isSuccess) {
-      //   emit(AuthAuthenticatedState(...));
-      // } else {
-      //   emit(AuthErrorState(message: result.error));
-      // }
-      await Future.delayed(const Duration(seconds: 2));
-      emit(AuthAuthenticatedState(
-        userId: '1',
-        email: event.email,
-        token: 'fake_token',
-      ));
+      final user = await _loginUseCase.call(event.email, event.password);
+
+      if (user != null) {
+        emit(AuthAuthenticatedState(
+          userId: user.id,
+          email: user.email,
+          token: user.token,
+        ));
+      } else {
+        emit(const AuthErrorState(message: 'Login failed'));
+      }
     } catch (e) {
-      emit(AuthErrorState(message: e.toString()));
+      emit(AuthErrorState(message: _getErrorMessage(e)));
     }
   }
 
@@ -45,14 +60,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     emit(const AuthLoadingState());
     try {
-      await Future.delayed(const Duration(seconds: 2));
-      emit(AuthAuthenticatedState(
-        userId: '1',
-        email: event.email,
-        token: 'fake_token',
-      ));
+      final user = await _registerUseCase.call(
+        event.name,
+        event.email,
+        event.password,
+      );
+
+      if (user != null) {
+        emit(AuthAuthenticatedState(
+          userId: user.id,
+          email: user.email,
+          token: user.token,
+        ));
+      } else {
+        emit(const AuthErrorState(message: 'Registration failed'));
+      }
     } catch (e) {
-      emit(AuthErrorState(message: e.toString()));
+      emit(AuthErrorState(message: _getErrorMessage(e)));
     }
   }
 
@@ -62,10 +86,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     emit(const AuthLoadingState());
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await _logoutUseCase.call();
       emit(const AuthUnauthenticatedState());
     } catch (e) {
-      emit(AuthErrorState(message: e.toString()));
+      emit(AuthErrorState(message: _getErrorMessage(e)));
     }
   }
 
@@ -73,8 +97,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthInitEvent event,
       Emitter<AuthState> emit,
       ) async {
-    // Check if user is already authenticated
-    await Future.delayed(const Duration(seconds: 1));
-    emit(const AuthUnauthenticatedState());
+    try {
+      final isLoggedIn = await _isLoggedInUseCase.call();
+
+      if (isLoggedIn) {
+        final user = await _getLoggedInUserUseCase.call();
+        if (user != null) {
+          emit(AuthAuthenticatedState(
+            userId: user.id,
+            email: user.email,
+            token: user.token,
+          ));
+        } else {
+          emit(const AuthUnauthenticatedState());
+        }
+      } else {
+        emit(const AuthUnauthenticatedState());
+      }
+    } catch (e) {
+      emit(const AuthUnauthenticatedState());
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    return error.toString().replaceAll('Exception: ', '');
   }
 }
