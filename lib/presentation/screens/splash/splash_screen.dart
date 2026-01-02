@@ -1,14 +1,21 @@
+// lib/presentation/screens/splash/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/navigation/app_router.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
 import '../../bloc/auth/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final VoidCallback onNavigateToHome;
+  final VoidCallback onNavigateToLogin;
+
+  const SplashScreen({
+    super.key,
+    required this.onNavigateToHome,
+    required this.onNavigateToLogin,
+  });
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -26,9 +33,9 @@ class _SplashScreenState extends State<SplashScreen> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticatedState) {
-          AppNavigation.goToHome(context);
+          widget.onNavigateToHome();
         } else if (state is AuthUnauthenticatedState) {
-          AppNavigation.goToLogin(context);
+          widget.onNavigateToLogin();
         }
       },
       child: Scaffold(

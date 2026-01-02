@@ -1,8 +1,8 @@
+// lib/presentation/screens/home/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/navigation/app_router.dart';
 import '../../../core/utils/responsive.dart';
 import '../../bloc/home/home_bloc.dart';
 import '../../bloc/home/home_event.dart';
@@ -11,7 +11,16 @@ import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final VoidCallback onNavigateToSearch;
+  final Function(String userId) onNavigateToProfile;
+  final VoidCallback onNavigateToLogin;
+
+  const HomeScreen({
+    super.key,
+    required this.onNavigateToSearch,
+    required this.onNavigateToProfile,
+    required this.onNavigateToLogin,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -32,11 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => AppNavigation.goToSearch(context),
+            onPressed: widget.onNavigateToSearch,
           ),
           IconButton(
             icon: const Icon(Icons.person),
-            onPressed: () => AppNavigation.goToProfile(context, '1'),
+            onPressed: () => widget.onNavigateToProfile('1'),
           ),
         ],
       ),
@@ -50,19 +59,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 context.read<HomeBloc>().add(const HomeRefreshEvent());
               },
               child: ListView(
-                padding: EdgeInsets.all(Responsive.getScaledValue(context, AppSpacing.md)),
+                padding: EdgeInsets.all(
+                  Responsive.getScaledValue(context, AppSpacing.md),
+                ),
                 children: [
-                  _buildFeatureCard(context, 'BLoC State Management'),
+                  _buildFeatureCard(
+                    context,
+                    'BLoC State Management',
+                    'Centralized state with BLoC pattern',
+                  ),
                   SizedBox(height: AppSpacing.md),
-                  _buildFeatureCard(context, 'Type-Safe Navigation'),
+                  _buildFeatureCard(
+                    context,
+                    'Centralized Navigation',
+                    'All navigation in one place',
+                    onTap: () => widget.onNavigateToProfile('user123'),
+                  ),
                   SizedBox(height: AppSpacing.md),
-                  _buildFeatureCard(context, 'Offline Sync'),
+                  _buildFeatureCard(
+                    context,
+                    'Search Feature',
+                    'Navigate to search screen',
+                    onTap: widget.onNavigateToSearch,
+                  ),
                   SizedBox(height: AppSpacing.md),
-                  _buildFeatureCard(context, 'Dependency Injection'),
+                  _buildFeatureCard(
+                    context,
+                    'Dependency Injection',
+                    'GetIt service locator',
+                  ),
                   SizedBox(height: AppSpacing.md),
                   ElevatedButton.icon(
                     onPressed: () {
                       context.read<AuthBloc>().add(const AuthLogoutEvent());
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        widget.onNavigateToLogin();
+                      });
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
@@ -79,23 +111,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFeatureCard(BuildContext context, String title) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(Responsive.getScaledValue(context, AppSpacing.md)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            SizedBox(height: AppSpacing.sm),
-            Text(
-              'Feature implementation example',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
+  Widget _buildFeatureCard(
+      BuildContext context,
+      String title,
+      String description, {
+        VoidCallback? onTap,
+      }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(
+            Responsive.getScaledValue(context, AppSpacing.md),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
         ),
       ),
     );

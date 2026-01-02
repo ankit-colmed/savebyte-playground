@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_spacing.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  final Function(String id) onNavigateToDetail;
+  final VoidCallback onNavigateBack;
+
+  const SearchScreen({
+    super.key,
+    required this.onNavigateToDetail,
+    required this.onNavigateBack,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -28,6 +35,10 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: widget.onNavigateBack,
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(AppSpacing.md),
@@ -42,6 +53,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              onSubmitted: (query) {
+                if (query.isNotEmpty) {
+                  widget.onNavigateToDetail(query);
+                }
+              },
             ),
             SizedBox(height: AppSpacing.lg),
             Expanded(

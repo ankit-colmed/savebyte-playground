@@ -8,7 +8,12 @@ import '../../bloc/auth/auth_event.dart';
 import '../../bloc/auth/auth_state.dart';
 
 class LoginRegisterScreen extends StatefulWidget {
-  const LoginRegisterScreen({super.key});
+  final VoidCallback onNavigateToHome;
+
+  const LoginRegisterScreen({
+    super.key,
+    required this.onNavigateToHome,
+  });
 
   @override
   State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
@@ -46,9 +51,14 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
               SnackBar(content: Text(state.message)),
             );
           }
+          if (state is AuthAuthenticatedState) {
+            widget.onNavigateToHome();
+          }
         },
         child: ListView(
-          padding: EdgeInsets.all(Responsive.getScaledValue(context, AppSpacing.lg)),
+          padding: EdgeInsets.all(
+            Responsive.getScaledValue(context, AppSpacing.lg),
+          ),
           children: [
             SizedBox(height: AppSpacing.xl),
             Text(
@@ -83,7 +93,9 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
                 return ElevatedButton(
                   onPressed: state is AuthLoadingState ? null : _handleSubmit,
                   child: Text(
-                    state is AuthLoadingState ? 'Loading...' : (isLoginMode ? 'Login' : 'Register'),
+                    state is AuthLoadingState
+                        ? 'Loading...'
+                        : (isLoginMode ? 'Login' : 'Register'),
                   ),
                 );
               },
@@ -111,7 +123,6 @@ class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
           password: passwordController.text,
         ),
       );
-
     } else {
       context.read<AuthBloc>().add(
         AuthRegisterEvent(
